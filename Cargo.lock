@@ -5,3 +5,12 @@ version = 4
 [[package]]
 name = "rs-cad"
 version = "0.1.0"
+dependencies = [
+ "stl_io",
+]
+
+[[package]]
+name = "stl_io"
+version = "0.11.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "567641995c51a3b8befddb13e1826187bcf7eb7ca8d13746bfd1cc5a22e89fa8"

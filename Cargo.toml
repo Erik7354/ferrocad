@@ -5,3 +5,4 @@ edition = "2024"
 
 [dependencies]
 stl_io = "0.11.0"
+threemf = "0.8.0"

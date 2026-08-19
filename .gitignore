@@ -3,3 +3,7 @@
 
 # Rust
 target/
+
+# Example output
+*.stl
+*.3mf

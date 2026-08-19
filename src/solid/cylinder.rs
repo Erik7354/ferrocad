@@ -20,7 +20,7 @@ impl Solid for Cylinder {
     fn mesh(&self, tolerance: Length) -> Mesh {
         let radius = self.radius.as_mm_f64();
         let half_height = self.height.as_mm_f64() / 2.0;
-        let segments = circle_segments(radius, tolerance.as_mm_f64());
+        let segments = super::circle_segments(radius, tolerance.as_mm_f64());
 
         let mut vertices = Vec::with_capacity(2 * segments + 2);
         vertices.push(Point3::new(0.0, 0.0, -half_height));
@@ -54,29 +54,11 @@ fn rim_point(radius: f64, z: f64, i: usize, segments: usize) -> Point3 {
     Point3::new(radius * theta.cos(), radius * theta.sin(), z)
 }
 
-/// Number of rim segments so each chord is at most `tolerance_mm` long.
-fn circle_segments(radius_mm: f64, tolerance_mm: f64) -> usize {
-    const MIN_SEGMENTS: usize = 3;
-    const MAX_SEGMENTS: usize = 360;
-
-    if radius_mm <= 0.0 {
-        return MIN_SEGMENTS;
-    }
-
-    let circumference = 2.0 * std::f64::consts::PI * radius_mm;
-    let spacing = if tolerance_mm <= 0.0 {
-        circumference / MAX_SEGMENTS as f64
-    } else {
-        tolerance_mm
-    };
-
-    ((circumference / spacing).ceil() as usize).clamp(MIN_SEGMENTS, MAX_SEGMENTS)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::ToLength;
+    use crate::solid::circle_segments;
 
     #[test]
     fn mesh_segment_count_follows_circumference() {

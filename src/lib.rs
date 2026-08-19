@@ -11,7 +11,7 @@ pub use export::three_mf::write_3mf;
 pub use length::{Length, ToLength};
 pub use mesh::Mesh;
 pub use model::{Model, Object};
-pub use solid::{Cuboid, Cylinder, Solid};
+pub use solid::{Cuboid, Cylinder, Solid, Sphere};
 
 #[cfg(test)]
 mod tests {}

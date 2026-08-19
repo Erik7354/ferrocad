@@ -2,10 +2,12 @@ use crate::{length::Length, mesh::Mesh};
 
 pub mod cuboid;
 pub mod cylinder;
+pub mod extrusion;
 pub mod sphere;
 
 pub use cuboid::Cuboid;
 pub use cylinder::Cylinder;
+pub use extrusion::Extrusion;
 pub use sphere::Sphere;
 
 /// A Solid represents a 3-dimensional volume.

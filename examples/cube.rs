@@ -1,4 +1,4 @@
-use rs_cad::{write_stl, Cuboid, Solid, ToLength};
+use rs_cad::{Cuboid, Solid, ToLength, write_stl};
 
 fn main() -> std::io::Result<()> {
     let cube = Cuboid::cube(20.mm());

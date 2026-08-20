@@ -39,4 +39,20 @@ impl Mesh {
             triangles,
         }
     }
+
+    /// Signed volume of the triangle mesh.
+    ///
+    /// The volume is positive when the triangles face outward.
+    pub fn signed_volume(&self) -> f64 {
+        let mut volume = 0.0;
+        for &[a, b, c] in &self.triangles {
+            let pa = self.vertices[a];
+            let pb = self.vertices[b];
+            let pc = self.vertices[c];
+            volume += pa.x * (pb.y * pc.z - pb.z * pc.y)
+                + pa.y * (pb.z * pc.x - pb.x * pc.z)
+                + pa.z * (pb.x * pc.y - pb.y * pc.x);
+        }
+        volume / 6.0
+    }
 }

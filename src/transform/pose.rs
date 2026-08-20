@@ -109,6 +109,24 @@ impl<S: Sketch> Pose3 for Extrusion<S> {
         TransformedSolid::new(self)
     }
 }
+impl<A, B> Pose3 for Union<A, B> {
+    type Inner = Self;
+    fn posed(self) -> TransformedSolid<Self> {
+        TransformedSolid::new(self)
+    }
+}
+impl<A, B> Pose3 for Difference<A, B> {
+    type Inner = Self;
+    fn posed(self) -> TransformedSolid<Self> {
+        TransformedSolid::new(self)
+    }
+}
+impl<A, B> Pose3 for Intersection<A, B> {
+    type Inner = Self;
+    fn posed(self) -> TransformedSolid<Self> {
+        TransformedSolid::new(self)
+    }
+}
 impl<T> Pose3 for TransformedSolid<T> {
     type Inner = T;
     fn posed(self) -> TransformedSolid<T> {

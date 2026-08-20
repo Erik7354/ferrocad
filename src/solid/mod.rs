@@ -14,6 +14,30 @@ pub use sphere::Sphere;
 /// A Solid represents a 3-dimensional volume.
 pub trait Solid {
     fn mesh(&self, tolerance: Length) -> Mesh;
+
+    /// Combine this solid with `other` (A ∪ B).
+    fn union<O: Solid>(self, other: O) -> Union<Self, O>
+    where
+        Self: Sized,
+    {
+        Union::new(self, other)
+    }
+
+    /// Cut `other` from this solid (A \ B).
+    fn difference<O: Solid>(self, other: O) -> Difference<Self, O>
+    where
+        Self: Sized,
+    {
+        Difference::new(self, other)
+    }
+
+    /// Keep the overlap of this solid and `other` (A ∩ B).
+    fn intersection<O: Solid>(self, other: O) -> Intersection<Self, O>
+    where
+        Self: Sized,
+    {
+        Intersection::new(self, other)
+    }
 }
 
 /// Number of segments along `length_mm` so each chord is at most `tolerance_mm`.

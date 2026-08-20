@@ -112,9 +112,9 @@ impl fmt::Display for Length {
 /// Conversion from a bare integer into a [`Length`] with an explicit unit.
 ///
 /// ```
-/// use rs_cad::ToLength;
+/// use ferrocad::ToLength;
 ///
-/// assert_eq!(5.mm(), rs_cad::Length::mm(5));
+/// assert_eq!(5.mm(), ferrocad::Length::mm(5));
 /// ```
 pub trait ToLength {
     fn mm(self) -> Length;

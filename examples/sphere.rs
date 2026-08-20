@@ -1,4 +1,4 @@
-use rs_cad::{Solid, Sphere, ToLength, write_stl};
+use ferrocad::{Solid, Sphere, ToLength, write_stl};
 
 fn main() -> std::io::Result<()> {
     let sphere = Sphere::new(10.mm());

@@ -15,7 +15,7 @@ impl Sphere {
     }
 
     pub const fn diameter(diameter: Length) -> Self {
-        Self::new(Length::mm(diameter.as_mm() / 2))
+        Self::new(Length::um(diameter.as_um() / 2))
     }
 }
 
@@ -81,6 +81,12 @@ fn sphere_point(radius: f64, phi: f64, theta: f64) -> Point3 {
 mod tests {
     use super::*;
     use crate::ToLength;
+
+    #[test]
+    fn diameter_is_twice_the_radius() {
+        assert_eq!(Sphere::diameter(20.mm()), Sphere::new(10.mm()));
+        assert_eq!(Sphere::diameter(5.mm()), Sphere::new(2_500.um()));
+    }
 
     #[test]
     fn mesh_segment_count_follows_tolerance() {

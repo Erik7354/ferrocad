@@ -11,7 +11,7 @@ impl Circle {
     }
 
     pub const fn diameter(diameter: Length) -> Self {
-        Self::new(Length::mm(diameter.as_mm() / 2))
+        Self::new(Length::um(diameter.as_um() / 2))
     }
 }
 
@@ -33,6 +33,12 @@ mod tests {
     use super::*;
     use crate::ToLength;
     use crate::solid::{Solid, circle_segments};
+
+    #[test]
+    fn diameter_is_twice_the_radius() {
+        assert_eq!(Circle::diameter(20.mm()), Circle::new(10.mm()));
+        assert_eq!(Circle::diameter(5.mm()), Circle::new(2_500.um()));
+    }
 
     #[test]
     fn contour_points_lie_on_the_radius() {

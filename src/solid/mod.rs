@@ -1,11 +1,14 @@
 use crate::length::Length;
 use crate::mesh::Mesh;
 
+mod boolean;
+pub mod csg;
 pub mod cuboid;
 pub mod cylinder;
 pub mod extrusion;
 pub mod sphere;
 
+pub use csg::{Difference, Intersection, Union};
 pub use cuboid::Cuboid;
 pub use cylinder::Cylinder;
 pub use extrusion::Extrusion;

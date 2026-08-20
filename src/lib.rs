@@ -15,8 +15,8 @@ pub use export::three_mf::write_3mf;
 pub use length::{Length, ToLength};
 pub use mesh::{Mesh, Point2, Point3};
 pub use model::{Model, Object};
-pub use sketch::{Circle, Rectangle, Sketch};
-pub use solid::{Cuboid, Cylinder, Extrusion, Solid, Sphere};
+pub use sketch::{Circle, Polygon, Rectangle, Sketch};
+pub use solid::{Cuboid, Cylinder, Difference, Extrusion, Intersection, Solid, Sphere, Union};
 pub use transform::{Affine2, Affine3, Pose2, Pose3, TransformedSketch, TransformedSolid};
 
 #[cfg(test)]

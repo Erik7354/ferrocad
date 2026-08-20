@@ -3,9 +3,12 @@ use crate::mesh::Point2;
 use crate::solid::Extrusion;
 
 pub mod circle;
+pub mod polygon;
 pub mod rectangle;
+pub(crate) mod triangulate;
 
 pub use circle::Circle;
+pub use polygon::Polygon;
 pub use rectangle::Rectangle;
 
 /// A Sketch is a flat shape in the XY plane.

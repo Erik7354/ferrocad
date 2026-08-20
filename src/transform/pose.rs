@@ -1,7 +1,7 @@
 use crate::angle::Angle;
 use crate::length::Length;
-use crate::sketch::{Circle, Rectangle, Sketch};
-use crate::solid::{Cuboid, Cylinder, Extrusion, Sphere};
+use crate::sketch::{Circle, Polygon, Rectangle, Sketch};
+use crate::solid::{Cuboid, Cylinder, Difference, Extrusion, Intersection, Sphere, Union};
 use crate::transform::affine::{Affine2, Affine3};
 use crate::transform::transformed::{TransformedSketch, TransformedSolid};
 
@@ -41,6 +41,12 @@ impl Pose2 for Circle {
     }
 }
 impl Pose2 for Rectangle {
+    type Inner = Self;
+    fn posed(self) -> TransformedSketch<Self> {
+        TransformedSketch::new(self)
+    }
+}
+impl Pose2 for Polygon {
     type Inner = Self;
     fn posed(self) -> TransformedSketch<Self> {
         TransformedSketch::new(self)

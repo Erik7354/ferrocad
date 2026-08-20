@@ -1,7 +1,7 @@
 use crate::{
     length::Length,
     mesh::{Mesh, Point3},
-    sketch::Sketch,
+    sketch::{Sketch, triangulate::triangulate},
 };
 
 use super::Solid;
@@ -36,10 +36,15 @@ impl<S: Sketch> Solid for Extrusion<S> {
             vertices.push(Point3::new(point.x, point.y, half_height));
         }
 
+        let caps = triangulate(&contour);
+        if caps.is_empty() {
+            return Mesh::new(Vec::new(), Vec::new());
+        }
+
         let mut triangles = Vec::with_capacity(4 * n - 4);
-        for i in 1..n - 1 {
-            triangles.push([0, i + 1, i]);
-            triangles.push([n, n + i, n + i + 1]);
+        for &[a, b, c] in &caps {
+            triangles.push([a, c, b]);
+            triangles.push([n + a, n + b, n + c]);
         }
         for i in 0..n {
             let next = (i + 1) % n;
@@ -113,13 +118,38 @@ mod tests {
     }
 
     #[test]
-    fn bottom_and_top_caps_use_the_first_contour_point() {
+    fn extruded_mesh_faces_outward_and_has_positive_volume() {
         let mesh = Circle::new(10.mm()).extrude(20.mm()).mesh(1.mm());
         let n = mesh.vertices.len() / 2;
 
         assert_eq!(mesh.vertices[0], Point3::new(10.0, 0.0, -10.0));
         assert_eq!(mesh.vertices[n], Point3::new(10.0, 0.0, 10.0));
-        assert_eq!(mesh.triangles[0], [0, 2, 1]);
-        assert_eq!(mesh.triangles[1], [n, n + 1, n + 2]);
+        assert_eq!(mesh.triangles.len(), 4 * n - 4);
+        assert!(mesh.signed_volume() > 0.0);
+
+        for &[a, b, c] in &mesh.triangles {
+            let ab = (
+                mesh.vertices[b].x - mesh.vertices[a].x,
+                mesh.vertices[b].y - mesh.vertices[a].y,
+                mesh.vertices[b].z - mesh.vertices[a].z,
+            );
+            let ac = (
+                mesh.vertices[c].x - mesh.vertices[a].x,
+                mesh.vertices[c].y - mesh.vertices[a].y,
+                mesh.vertices[c].z - mesh.vertices[a].z,
+            );
+            let normal = (
+                ab.1 * ac.2 - ab.2 * ac.1,
+                ab.2 * ac.0 - ab.0 * ac.2,
+                ab.0 * ac.1 - ab.1 * ac.0,
+            );
+            let centroid = (
+                (mesh.vertices[a].x + mesh.vertices[b].x + mesh.vertices[c].x) / 3.0,
+                (mesh.vertices[a].y + mesh.vertices[b].y + mesh.vertices[c].y) / 3.0,
+                (mesh.vertices[a].z + mesh.vertices[b].z + mesh.vertices[c].z) / 3.0,
+            );
+
+            assert!(normal.0 * centroid.0 + normal.1 * centroid.1 + normal.2 * centroid.2 > 0.0);
+        }
     }
 }

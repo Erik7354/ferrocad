@@ -17,7 +17,7 @@ pub use mesh::{Mesh, Point2, Point3};
 pub use model::{Model, Object};
 pub use sketch::{Circle, Rectangle, Sketch};
 pub use solid::{Cuboid, Cylinder, Extrusion, Solid, Sphere};
-pub use transform::{Affine2, Affine3, TransformedSketch, TransformedSolid};
+pub use transform::{Affine2, Affine3, Pose2, Pose3, TransformedSketch, TransformedSolid};
 
 #[cfg(test)]
 mod tests {}

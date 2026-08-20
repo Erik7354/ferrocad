@@ -4,6 +4,7 @@ use crate::mesh::Mesh;
 use crate::sketch::Sketch;
 use crate::solid::Solid;
 use crate::transform::affine::{Affine2, Affine3};
+use crate::transform::{Pose2, Pose3};
 
 /// A sketch with a 2D affine pose.
 ///
@@ -147,8 +148,8 @@ mod tests {
     use crate::ToAngle;
     use crate::ToLength;
     use crate::mesh::{Point2, Point3};
-    use crate::sketch::{Circle, Rectangle};
-    use crate::solid::Cuboid;
+    use crate::sketch::{Circle, Rectangle, Sketch};
+    use crate::solid::{Cuboid, Solid};
 
     fn assert_point3(actual: Point3, expected: Point3) {
         assert!(
@@ -306,6 +307,49 @@ mod tests {
             );
 
             assert!(normal.0 * centroid.0 + normal.1 * centroid.1 + normal.2 * centroid.2 > 0.0);
+        }
+    }
+
+    #[test]
+    fn generic_pose_composes_into_one_wrapper() {
+        fn bump<S: Pose3>(s: S) -> TransformedSolid<S::Inner> {
+            s.translate(1.mm(), 0.mm(), 0.mm())
+        }
+        let cuboid = Cuboid::cube(10.mm());
+        let twice = bump(bump(cuboid));
+        assert_eq!(twice.shape, cuboid);
+        assert_eq!(
+            twice.affine,
+            Affine3::translate(1.mm(), 0.mm(), 0.mm()) * Affine3::translate(1.mm(), 0.mm(), 0.mm())
+        );
+    }
+
+    #[test]
+    fn mirror_keeps_a_sketch_contour_counterclockwise() {
+        let contour = Rectangle::new(20.mm(), 10.mm())
+            .mirror(1.0, 0.0)
+            .contour(1.mm());
+
+        assert_eq!(
+            contour,
+            vec![
+                Point2::new(10.0, 5.0),
+                Point2::new(-10.0, 5.0),
+                Point2::new(-10.0, -5.0),
+                Point2::new(10.0, -5.0),
+            ]
+        );
+    }
+
+    #[test]
+    fn negative_scale_reverses_triangle_winding() {
+        let cuboid = Cuboid::cube(10.mm());
+        let original = cuboid.mesh(1.mm());
+        let mesh = cuboid.scale(-1.0, 1.0, 1.0).mesh(1.mm());
+
+        assert_eq!(mesh.triangles.len(), original.triangles.len());
+        for (scaled, original) in mesh.triangles.iter().zip(&original.triangles) {
+            assert_eq!(*scaled, [original[0], original[2], original[1]]);
         }
     }
 }

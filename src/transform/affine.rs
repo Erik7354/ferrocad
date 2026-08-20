@@ -34,7 +34,9 @@ impl Affine2 {
         m: [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]],
     };
 
-    pub const fn from_rows(rows: [[f64; 3]; 3]) -> Self {
+    /// Build a map from a 3×3 matrix. The last row is set to `[0, 0, 1]`.
+    pub const fn from_rows(mut rows: [[f64; 3]; 3]) -> Self {
+        rows[2] = [0.0, 0.0, 1.0];
         Self { m: rows }
     }
 
@@ -117,11 +119,6 @@ impl Mul<Point2> for Affine2 {
     }
 }
 
-/// A 3D affine map: linear part plus translation, stored as a 4×4 matrix.
-///
-/// Points are column vectors; `A * B` means apply `B` first, then `A`.
-///
-///
 /// A 3D affine map, stored as a 4×4 matrix in homogeneous coordinates.
 ///
 /// A 3×3 matrix is linear and cannot translate. Affine maps are `p ↦ Ap + t`.
@@ -155,7 +152,9 @@ impl Affine3 {
         ],
     };
 
-    pub const fn from_rows(rows: [[f64; 4]; 4]) -> Self {
+    /// Build a map from a 4×4 matrix. The last row is set to `[0, 0, 0, 1]`.
+    pub const fn from_rows(mut rows: [[f64; 4]; 4]) -> Self {
+        rows[3] = [0.0, 0.0, 0.0, 1.0];
         Self { m: rows }
     }
 
@@ -172,7 +171,7 @@ impl Affine3 {
         ])
     }
 
-    /// Rotation by Euler angles around X, then Y, then Z (OpenSCAD `rotate([x,y,z])`).
+    /// Rotation by Euler angles around X, then Y, then Z.
     pub fn rotate(x: Angle, y: Angle, z: Angle) -> Self {
         Self::rotate_z(z) * Self::rotate_y(y) * Self::rotate_x(x)
     }
@@ -210,7 +209,7 @@ impl Affine3 {
         ])
     }
 
-    /// Rotation by `angle` around the vector `(x, y, z)` (OpenSCAD `rotate(a, v)`).
+    /// Rotation by `angle` around the vector `(x, y, z)`.
     pub fn rotate_axis(angle: Angle, x: f64, y: f64, z: f64) -> Self {
         let len = (x * x + y * y + z * z).sqrt();
         if len == 0.0 {
@@ -378,5 +377,37 @@ mod tests {
 
         assert_point3(rotate * translate * origin, Point3::new(0.0, 10.0, 0.0));
         assert_point3(translate * rotate * origin, Point3::new(10.0, 0.0, 0.0));
+    }
+
+    #[test]
+    fn rotate_x_90_sends_y_to_z() {
+        assert_point3(
+            Affine3::rotate(90.deg(), Angle::ZERO, Angle::ZERO) * Point3::new(0.0, 10.0, 0.0),
+            Point3::new(0.0, 0.0, 10.0),
+        );
+    }
+
+    #[test]
+    fn rotate_y_90_sends_z_to_x() {
+        assert_point3(
+            Affine3::rotate(Angle::ZERO, 90.deg(), Angle::ZERO) * Point3::new(0.0, 0.0, 10.0),
+            Point3::new(10.0, 0.0, 0.0),
+        );
+    }
+
+    #[test]
+    fn from_rows_forces_an_affine_last_row() {
+        let a2 = Affine2::from_rows([[1.0, 0.0, 5.0], [0.0, 1.0, 0.0], [0.1, 0.0, 2.0]]);
+        assert_eq!(a2.rows()[2], [0.0, 0.0, 1.0]);
+        assert_point2(a2 * Point2::new(1.0, 0.0), Point2::new(6.0, 0.0));
+
+        let a3 = Affine3::from_rows([
+            [1.0, 0.0, 0.0, 5.0],
+            [0.0, 1.0, 0.0, 0.0],
+            [0.0, 0.0, 1.0, 0.0],
+            [0.1, 0.0, 0.0, 2.0],
+        ]);
+        assert_eq!(a3.rows()[3], [0.0, 0.0, 0.0, 1.0]);
+        assert_point3(a3 * Point3::new(1.0, 0.0, 0.0), Point3::new(6.0, 0.0, 0.0));
     }
 }

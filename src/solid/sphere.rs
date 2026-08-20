@@ -13,6 +13,10 @@ impl Sphere {
     pub const fn new(radius: Length) -> Self {
         Self { radius }
     }
+
+    pub const fn diameter(diameter: Length) -> Self {
+        Self::new(Length::mm(diameter.as_mm() / 2))
+    }
 }
 
 impl Solid for Sphere {

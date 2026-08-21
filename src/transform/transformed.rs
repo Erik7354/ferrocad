@@ -2,9 +2,8 @@ use crate::angle::Angle;
 use crate::length::Length;
 use crate::mesh::Mesh;
 use crate::sketch::Sketch;
-use crate::solid::Solid;
+use crate::solid::{Body, Solid};
 use crate::transform::affine::{Affine2, Affine3};
-use crate::transform::{Pose2, Pose3};
 
 /// A sketch with a 2D affine pose.
 ///
@@ -127,6 +126,27 @@ impl<T> TransformedSolid<T> {
     }
 }
 
+impl TransformedSolid<Body> {
+    fn into_body(self) -> Body {
+        self.shape.transform_by(self.affine.to_manifold_transform())
+    }
+
+    /// Combine this posed body with `other` and keep a [`Body`].
+    pub fn union(self, other: impl Solid) -> Body {
+        self.into_body().union(other)
+    }
+
+    /// Cut `other` from this posed body and keep a [`Body`].
+    pub fn difference(self, other: impl Solid) -> Body {
+        self.into_body().difference(other)
+    }
+
+    /// Keep the overlap of this posed body and `other` and keep a [`Body`].
+    pub fn intersection(self, other: impl Solid) -> Body {
+        self.into_body().intersection(other)
+    }
+}
+
 impl<S: Solid> Solid for TransformedSolid<S> {
     fn mesh(&self, tolerance: Length) -> Mesh {
         let mut mesh = self.shape.mesh(tolerance);
@@ -150,6 +170,7 @@ mod tests {
     use crate::mesh::{Point2, Point3};
     use crate::sketch::{Circle, Rectangle, Sketch};
     use crate::solid::{Cuboid, Solid};
+    use crate::transform::{Pose2, Pose3};
 
     fn assert_point3(actual: Point3, expected: Point3) {
         assert!(

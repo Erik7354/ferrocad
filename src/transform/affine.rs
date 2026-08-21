@@ -272,6 +272,24 @@ impl Affine3 {
             self.m[2][0] * point.x + self.m[2][1] * point.y + self.m[2][2] * point.z + self.m[2][3],
         )
     }
+
+    /// Column-major 4×3 affine map for `manifold_csg::Manifold::transform`.
+    pub(crate) fn to_manifold_transform(self) -> [f64; 12] {
+        [
+            self.m[0][0],
+            self.m[1][0],
+            self.m[2][0],
+            self.m[0][1],
+            self.m[1][1],
+            self.m[2][1],
+            self.m[0][2],
+            self.m[1][2],
+            self.m[2][2],
+            self.m[0][3],
+            self.m[1][3],
+            self.m[2][3],
+        ]
+    }
 }
 
 impl Default for Affine3 {
@@ -409,5 +427,17 @@ mod tests {
         ]);
         assert_eq!(a3.rows()[3], [0.0, 0.0, 0.0, 1.0]);
         assert_point3(a3 * Point3::new(1.0, 0.0, 0.0), Point3::new(6.0, 0.0, 0.0));
+    }
+
+    #[test]
+    fn manifold_transform_is_column_major_4x3() {
+        assert_eq!(
+            Affine3::IDENTITY.to_manifold_transform(),
+            [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0]
+        );
+        assert_eq!(
+            Affine3::translate(10.mm(), -4.mm(), 2.mm()).to_manifold_transform(),
+            [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 10.0, -4.0, 2.0]
+        );
     }
 }

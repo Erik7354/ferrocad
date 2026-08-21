@@ -8,35 +8,96 @@ use manifold_csg::manifold::Manifold;
 use crate::mesh::{Mesh, Point3};
 
 pub(crate) fn union(a: &Mesh, b: &Mesh) -> Mesh {
-    apply(Op::Union, a, b)
+    Kernel::from_mesh(a).union(&Kernel::from_mesh(b)).to_mesh()
 }
 
 pub(crate) fn difference(a: &Mesh, b: &Mesh) -> Mesh {
-    apply(Op::Difference, a, b)
+    Kernel::from_mesh(a)
+        .difference(&Kernel::from_mesh(b))
+        .to_mesh()
 }
 
 pub(crate) fn intersection(a: &Mesh, b: &Mesh) -> Mesh {
-    apply(Op::Intersection, a, b)
+    Kernel::from_mesh(a)
+        .intersection(&Kernel::from_mesh(b))
+        .to_mesh()
 }
 
-enum Op {
-    Union,
-    Difference,
-    Intersection,
+/// Owned Manifold wrapper. The public [`super::Body`] type stores this.
+#[derive(Clone)]
+pub(crate) struct Kernel {
+    manifold: Manifold,
 }
 
-fn apply(op: Op, a: &Mesh, b: &Mesh) -> Mesh {
-    let left = to_manifold(a);
-    let right = to_manifold(b);
-    let result = match op {
-        Op::Union => left.union(&right),
-        Op::Difference => left.difference(&right),
-        Op::Intersection => left.intersection(&right),
-    };
-    result
+impl Kernel {
+    pub(crate) fn empty() -> Self {
+        Self {
+            manifold: Manifold::empty(),
+        }
+    }
+
+    pub(crate) fn from_mesh(mesh: &Mesh) -> Self {
+        Self {
+            manifold: to_manifold(mesh),
+        }
+    }
+
+    pub(crate) fn to_mesh(&self) -> Mesh {
+        from_manifold(&self.manifold)
+    }
+
+    pub(crate) fn is_empty(&self) -> bool {
+        self.manifold.is_empty()
+    }
+
+    pub(crate) fn union(&self, other: &Self) -> Self {
+        check(self.manifold.union(&other.manifold))
+    }
+
+    pub(crate) fn difference(&self, other: &Self) -> Self {
+        check(self.manifold.difference(&other.manifold))
+    }
+
+    pub(crate) fn intersection(&self, other: &Self) -> Self {
+        check(self.manifold.intersection(&other.manifold))
+    }
+
+    pub(crate) fn batch_union(parts: &[Self]) -> Self {
+        if parts.is_empty() {
+            return Self::empty();
+        }
+        if let [only] = parts {
+            return only.clone();
+        }
+        let manifolds: Vec<Manifold> = parts.iter().map(|part| part.manifold.clone()).collect();
+        check(Manifold::batch_union(&manifolds))
+    }
+
+    pub(crate) fn batch_difference(parts: &[Self]) -> Self {
+        if parts.is_empty() {
+            return Self::empty();
+        }
+        if let [only] = parts {
+            return only.clone();
+        }
+        let manifolds: Vec<Manifold> = parts.iter().map(|part| part.manifold.clone()).collect();
+        check(Manifold::batch_difference(&manifolds))
+    }
+
+    pub(crate) fn transform(&self, m: &[f64; 12]) -> Self {
+        let result = self.manifold.transform(m);
+        result
+            .status()
+            .unwrap_or_else(|err| panic!("manifold transform failed: {err}"));
+        Self { manifold: result }
+    }
+}
+
+fn check(manifold: Manifold) -> Kernel {
+    manifold
         .status()
         .unwrap_or_else(|err| panic!("manifold boolean failed: {err}"));
-    from_manifold(&result)
+    Kernel { manifold }
 }
 
 fn to_manifold(mesh: &Mesh) -> Manifold {
@@ -104,22 +165,22 @@ mod tests {
 
     #[test]
     fn cuboid_ingests() {
-        to_manifold(&Cuboid::cube(10.mm()).mesh(1.mm()));
+        Kernel::from_mesh(&Cuboid::cube(10.mm()).mesh(1.mm()));
     }
 
     #[test]
     fn cylinder_ingests() {
-        to_manifold(&Cylinder::new(10.mm(), 20.mm()).mesh(1.mm()));
+        Kernel::from_mesh(&Cylinder::new(10.mm(), 20.mm()).mesh(1.mm()));
     }
 
     #[test]
     fn sphere_ingests() {
-        to_manifold(&Sphere::new(10.mm()).mesh(1.mm()));
+        Kernel::from_mesh(&Sphere::new(10.mm()).mesh(1.mm()));
     }
 
     #[test]
     fn posed_cuboid_ingests() {
-        to_manifold(
+        Kernel::from_mesh(
             &Cuboid::cube(10.mm())
                 .translate(5.mm(), -2.mm(), 3.mm())
                 .mesh(1.mm()),
@@ -128,7 +189,7 @@ mod tests {
 
     #[test]
     fn empty_mesh_becomes_an_empty_manifold() {
-        let manifold = to_manifold(&Mesh::new(Vec::new(), Vec::new()));
-        assert!(manifold.is_empty());
+        let kernel = Kernel::from_mesh(&Mesh::new(Vec::new(), Vec::new()));
+        assert!(kernel.is_empty());
     }
 }

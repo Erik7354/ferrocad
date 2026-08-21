@@ -1,6 +1,7 @@
 use crate::length::Length;
 use crate::mesh::Mesh;
 
+mod body;
 mod boolean;
 pub mod csg;
 pub mod cuboid;
@@ -8,6 +9,7 @@ pub mod cylinder;
 pub mod extrusion;
 pub mod sphere;
 
+pub use body::Body;
 pub use csg::{Difference, Intersection, Union};
 pub use cuboid::Cuboid;
 pub use cylinder::Cylinder;
@@ -17,6 +19,18 @@ pub use sphere::Sphere;
 /// A Solid represents a 3-dimensional volume.
 pub trait Solid {
     fn mesh(&self, tolerance: Length) -> Mesh;
+
+    /// Tessellate this solid at `tolerance` and keep the Manifold as a [`Body`].
+    ///
+    /// Further remeshing cannot recover a finer primitive. Typed
+    /// [`Union`] / [`Difference`] / [`Intersection`] trees still remesh from
+    /// the leaves when you call [`mesh`](Self::mesh) with another tolerance.
+    fn bake(self, tolerance: Length) -> Body
+    where
+        Self: Sized,
+    {
+        Body::from_solid(self, tolerance)
+    }
 
     /// Combine this solid with `other` (A ∪ B).
     fn union<O: Solid>(self, other: O) -> Union<Self, O>

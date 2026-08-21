@@ -1,7 +1,7 @@
 use crate::angle::Angle;
 use crate::length::Length;
 use crate::sketch::{Circle, Polygon, Rectangle, Sketch};
-use crate::solid::{Cuboid, Cylinder, Difference, Extrusion, Intersection, Sphere, Union};
+use crate::solid::{Body, Cuboid, Cylinder, Difference, Extrusion, Intersection, Sphere, Union};
 use crate::transform::affine::{Affine2, Affine3};
 use crate::transform::transformed::{TransformedSketch, TransformedSolid};
 
@@ -137,5 +137,38 @@ impl<T> Pose3 for TransformedSolid<T> {
     type Inner = T;
     fn posed(self) -> TransformedSolid<T> {
         self
+    }
+}
+
+impl Body {
+    pub fn translate(self, x: Length, y: Length, z: Length) -> Self {
+        self.transform_by(Affine3::translate(x, y, z).to_manifold_transform())
+    }
+
+    pub fn rotate(self, x: Angle, y: Angle, z: Angle) -> Self {
+        self.transform_by(Affine3::rotate(x, y, z).to_manifold_transform())
+    }
+
+    pub fn rotate_axis(self, angle: Angle, x: f64, y: f64, z: f64) -> Self {
+        self.transform_by(Affine3::rotate_axis(angle, x, y, z).to_manifold_transform())
+    }
+
+    pub fn scale(self, x: f64, y: f64, z: f64) -> Self {
+        self.transform_by(Affine3::scale(x, y, z).to_manifold_transform())
+    }
+
+    pub fn mirror(self, x: f64, y: f64, z: f64) -> Self {
+        self.transform_by(Affine3::mirror(x, y, z).to_manifold_transform())
+    }
+
+    pub fn multmatrix(self, matrix: Affine3) -> Self {
+        self.transform_by(matrix.to_manifold_transform())
+    }
+}
+
+impl Pose3 for Body {
+    type Inner = Self;
+    fn posed(self) -> TransformedSolid<Self> {
+        TransformedSolid::new(self)
     }
 }

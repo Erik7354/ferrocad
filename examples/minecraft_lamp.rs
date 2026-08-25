@@ -224,12 +224,12 @@ impl Lamp {
     fn base(&self) -> Body {
         let extra = 1.mm();
         let half = self.voxel * self.n / 2;
-        let through = Cylinder::new(self.bore_r(), self.voxel + extra * 2).translate(
+        let through = Cylinder::new(self.voxel + extra * 2, self.bore_r()).translate(
             Length::ZERO,
             Length::ZERO,
             self.voxel / 2,
         );
-        let counterbore = Cylinder::new(self.hole_r(), self.counterbore_h() + extra).translate(
+        let counterbore = Cylinder::new(self.counterbore_h() + extra, self.hole_r()).translate(
             Length::ZERO,
             Length::ZERO,
             self.voxel - self.counterbore_h() / 2 + extra / 2,
@@ -407,15 +407,15 @@ impl Lamp {
         let h = self.ring_h();
         let od = self.ring_od();
         let z = self.voxel - self.counterbore_h() + h / 2;
-        let pocket = Cylinder::new(self.pocket_r(), h - self.flange_h() + 2.mm()).translate(
+        let pocket = Cylinder::new(h - self.flange_h() + 2.mm(), self.pocket_r()).translate(
             Length::ZERO,
             Length::ZERO,
             self.flange_h() / 2 + 1.mm(),
         );
         let cable =
-            Cylinder::new(self.cable_w() / 2, h + 2.mm()).translate(od, Length::ZERO, Length::ZERO);
-        Cylinder::new(od, h)
-            .difference(Cylinder::new(self.flange_r(), h + 2.mm()))
+            Cylinder::new(h + 2.mm(), self.cable_w() / 2).translate(od, Length::ZERO, Length::ZERO);
+        Cylinder::new(h, od)
+            .difference(Cylinder::new(h + 2.mm(), self.flange_r()))
             .difference(pocket)
             .difference(cable)
             .translate(Length::ZERO, Length::ZERO, z)
@@ -434,9 +434,9 @@ impl Lamp {
             ],
             self.tol,
         );
-        let hub = Cylinder::new(self.voxel / 2, h);
-        let disc = Cylinder::new(r, h);
-        let bore = Cylinder::new(self.voxel / 4, h + 2.mm());
+        let hub = Cylinder::new(h, self.voxel / 2);
+        let disc = Cylinder::new(h, r);
+        let bore = Cylinder::new(h + 2.mm(), self.voxel / 4);
         spokes
             .union(hub)
             .intersection(disc)

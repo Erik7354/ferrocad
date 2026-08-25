@@ -16,12 +16,18 @@ pub struct Cylinder {
 }
 
 impl Cylinder {
-    pub const fn new(radius: Length, height: Length) -> Self {
+    /// Cylinder of equal end radii. Arguments are height, then radius.
+    pub const fn new(height: Length, radius: Length) -> Self {
         Self {
             bottom_radius: radius,
             top_radius: radius,
             height,
         }
+    }
+
+    /// Cylinder of equal end radii from height and diameter.
+    pub const fn diameter(height: Length, diameter: Length) -> Self {
+        Self::new(height, Length::um(diameter.as_um() / 2))
     }
 
     pub const fn frustum(bottom_radius: Length, top_radius: Length, height: Length) -> Self {
@@ -116,11 +122,23 @@ mod tests {
     #[test]
     fn mesh_segment_count_follows_circumference() {
         let segments = circle_segments(10.0, 1.0);
-        let mesh = Cylinder::new(10.mm(), 20.mm()).mesh(1.mm());
+        let mesh = Cylinder::new(20.mm(), 10.mm()).mesh(1.mm());
 
         assert_eq!(segments, 63);
         assert_eq!(mesh.vertices.len(), 2 * segments + 2);
         assert_eq!(mesh.triangles.len(), 4 * segments);
+    }
+
+    #[test]
+    fn diameter_is_twice_the_radius() {
+        assert_eq!(
+            Cylinder::diameter(20.mm(), 10.mm()),
+            Cylinder::new(20.mm(), 5.mm())
+        );
+        assert_eq!(
+            Cylinder::diameter(8.mm(), 5.mm()),
+            Cylinder::new(8.mm(), 2_500.um())
+        );
     }
 
     #[test]
@@ -134,8 +152,8 @@ mod tests {
 
     #[test]
     fn coarser_tolerance_uses_fewer_segments() {
-        let fine = Cylinder::new(10.mm(), 20.mm()).mesh(1.mm());
-        let coarse = Cylinder::new(10.mm(), 20.mm()).mesh(5.mm());
+        let fine = Cylinder::new(20.mm(), 10.mm()).mesh(1.mm());
+        let coarse = Cylinder::new(20.mm(), 10.mm()).mesh(5.mm());
 
         assert!(coarse.vertices.len() < fine.vertices.len());
         assert!(coarse.triangles.len() < fine.triangles.len());
@@ -143,7 +161,7 @@ mod tests {
 
     #[test]
     fn mesh_is_centered_with_rims_on_the_radius() {
-        let mesh = Cylinder::new(10.mm(), 20.mm()).mesh(1.mm());
+        let mesh = Cylinder::new(20.mm(), 10.mm()).mesh(1.mm());
         let segments = (mesh.vertices.len() - 2) / 2;
         let half_height = 10.0;
 
@@ -217,7 +235,7 @@ mod tests {
 
     #[test]
     fn side_triangles_face_outward() {
-        let mesh = Cylinder::new(10.mm(), 20.mm()).mesh(1.mm());
+        let mesh = Cylinder::new(20.mm(), 10.mm()).mesh(1.mm());
         let [a, b, c] = mesh.triangles[2];
         let ab = (
             mesh.vertices[b].x - mesh.vertices[a].x,

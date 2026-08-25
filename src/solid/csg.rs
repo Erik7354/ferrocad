@@ -132,7 +132,7 @@ mod tests {
     #[test]
     fn plate_minus_through_hole_loses_the_cylinder_volume() {
         let plate = Cuboid::new(40.mm(), 30.mm(), 4.mm());
-        let hole = Cylinder::new(5.mm(), 10.mm());
+        let hole = Cylinder::new(10.mm(), 5.mm());
         let mesh = plate.difference(hole).mesh(500.um());
 
         let plate_volume = plate.mesh(500.um()).signed_volume();
@@ -169,7 +169,7 @@ mod tests {
     #[test]
     fn pose_then_difference_matches_difference_then_pose() {
         let plate = Cuboid::new(40.mm(), 30.mm(), 4.mm());
-        let hole = Cylinder::new(5.mm(), 10.mm());
+        let hole = Cylinder::new(10.mm(), 5.mm());
         let offset = 8.mm();
 
         let posed_then_cut = plate

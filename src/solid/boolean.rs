@@ -170,7 +170,7 @@ mod tests {
 
     #[test]
     fn cylinder_ingests() {
-        Kernel::from_mesh(&Cylinder::new(10.mm(), 20.mm()).mesh(1.mm()));
+        Kernel::from_mesh(&Cylinder::new(20.mm(), 10.mm()).mesh(1.mm()));
     }
 
     #[test]

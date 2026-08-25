@@ -197,9 +197,9 @@ mod tests {
     fn baked_plate_hole_loop_matches_typed_difference_chain() {
         let plate = Cuboid::new(40.mm(), 30.mm(), 4.mm());
         let holes = [
-            Cylinder::new(2.mm(), 10.mm()).translate(-10.mm(), -8.mm(), Length::ZERO),
-            Cylinder::new(2.mm(), 10.mm()).translate(10.mm(), -8.mm(), Length::ZERO),
-            Cylinder::new(2.mm(), 10.mm()).translate(-10.mm(), 8.mm(), Length::ZERO),
+            Cylinder::new(10.mm(), 2.mm()).translate(-10.mm(), -8.mm(), Length::ZERO),
+            Cylinder::new(10.mm(), 2.mm()).translate(10.mm(), -8.mm(), Length::ZERO),
+            Cylinder::new(10.mm(), 2.mm()).translate(-10.mm(), 8.mm(), Length::ZERO),
         ];
         let typed = plate
             .difference(holes[0])

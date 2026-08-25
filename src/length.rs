@@ -6,7 +6,8 @@ use std::{
 /// A length stored as an integer number of micrometers.
 ///
 /// Construct values with [`Length::um`], [`Length::mm`], [`Length::cm`], or
-/// [`Length::m`], or as `100.um()` / `5.mm()` / `2.cm()` / `1.m()` via [`ToLength`].
+/// [`Length::m`], or as `100.um()` / `5.mm()` / `2.4.mm()` / `2.cm()` / `1.m()`
+/// via [`ToLength`]. Floats round to the nearest micrometer.
 /// Internal resolution is micrometers (`i128`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 pub struct Length {
@@ -39,6 +40,13 @@ impl Length {
     pub const fn m(m: i64) -> Self {
         Self {
             um: m as i128 * Self::UM_PER_M,
+        }
+    }
+
+    /// Round `value * scale` to the nearest micrometer.
+    fn from_f64(value: f64, scale: f64) -> Self {
+        Self {
+            um: (value * scale).round() as i128,
         }
     }
 
@@ -131,12 +139,13 @@ impl fmt::Display for Length {
     }
 }
 
-/// Conversion from a bare integer into a [`Length`] with an explicit unit.
+/// Conversion from a bare number into a [`Length`] with an explicit unit.
 ///
 /// ```
 /// use ferrocad::ToLength;
 ///
 /// assert_eq!(5.mm(), ferrocad::Length::mm(5));
+/// assert_eq!(2.4.mm(), ferrocad::Length::um(2_400));
 /// assert_eq!(100.um(), ferrocad::Length::um(100));
 /// ```
 pub trait ToLength {
@@ -164,6 +173,24 @@ impl ToLength for i64 {
     }
 }
 
+impl ToLength for f64 {
+    fn um(self) -> Length {
+        Length::from_f64(self, 1.0)
+    }
+
+    fn mm(self) -> Length {
+        Length::from_f64(self, Length::UM_PER_MM as f64)
+    }
+
+    fn cm(self) -> Length {
+        Length::from_f64(self, Length::UM_PER_CM as f64)
+    }
+
+    fn m(self) -> Length {
+        Length::from_f64(self, Length::UM_PER_M as f64)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -182,6 +209,16 @@ mod tests {
         assert_eq!(5.mm(), Length::mm(5));
         assert_eq!(2.cm(), Length::cm(2));
         assert_eq!(1.m(), Length::m(1));
+    }
+
+    #[test]
+    fn float_suffix_rounds_to_micrometers() {
+        assert_eq!(2.4.mm(), Length::um(2_400));
+        assert_eq!(0.5.mm(), 500.um());
+        assert_eq!(1.5.cm(), 15.mm());
+        assert_eq!(0.001.m(), 1.mm());
+        assert_eq!(2.4.um(), Length::um(2));
+        assert_eq!(2.6.um(), Length::um(3));
     }
 
     #[test]

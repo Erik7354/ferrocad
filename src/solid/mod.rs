@@ -7,6 +7,7 @@ pub mod csg;
 pub mod cuboid;
 pub mod cylinder;
 pub mod extrusion;
+pub mod rotate_extrusion;
 pub mod sphere;
 
 pub use body::Body;
@@ -14,6 +15,7 @@ pub use csg::{Difference, Intersection, Union};
 pub use cuboid::Cuboid;
 pub use cylinder::Cylinder;
 pub use extrusion::Extrusion;
+pub use rotate_extrusion::RotateExtrusion;
 pub use sphere::Sphere;
 
 /// A Solid represents a 3-dimensional volume.

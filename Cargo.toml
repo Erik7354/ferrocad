@@ -2,8 +2,14 @@
 name = "ferrocad"
 version = "0.1.0"
 edition = "2024"
+description = "Parametric 2D sketches and 3D CAD models in Rust, with STL and 3MF export"
+license = "PolyForm-Noncommercial-1.0.0"
+license-file = "LICENSE"
+readme = "README"
 
 [dependencies]
 manifold-csg = "0.4"
+quick-xml = { version = "0.39", features = ["serialize"] }
+serde = { version = "1", features = ["derive"] }
 stl_io = "0.11.0"
-threemf = "0.8.0"
+zip = { version = "8", default-features = false, features = ["deflate"] }

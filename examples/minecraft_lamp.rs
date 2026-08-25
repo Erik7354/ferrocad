@@ -11,6 +11,7 @@ const IRON: Color = Color::rgb(32, 32, 34);
 
 fn main() -> std::io::Result<()> {
     let lamp = Lamp::new();
+
     write_3mf(&lamp.model(), "minecraft_lamp.3mf")?;
     println!("wrote minecraft_lamp.3mf");
     Ok(())

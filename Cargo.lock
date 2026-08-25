@@ -59,8 +59,10 @@ name = "ferrocad"
 version = "0.1.0"
 dependencies = [
  "manifold-csg",
+ "quick-xml",
+ "serde",
  "stl_io",
- "threemf",
+ "zip",
 ]
 
 [[package]]
@@ -242,18 +244,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
-]
-
-[[package]]
-name = "threemf"
-version = "0.8.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0a7b402a28a34887fd3bd06ffc49702af78454c9dd17af4bbe2c0a7255274f89"
-dependencies = [
- "quick-xml",
- "serde",
- "thiserror",
- "zip",
 ]
 
 [[package]]

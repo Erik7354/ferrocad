@@ -11,7 +11,7 @@ mod transform;
 pub use angle::{Angle, ToAngle};
 pub use color::Color;
 pub use export::stl::write_stl;
-pub use export::three_mf::write_3mf;
+pub use export::three_mf::{ThreeMfExport, ThreeMfMetadata, write_3mf};
 pub use length::{Length, ToLength};
 pub use mesh::{Mesh, Point2, Point3};
 pub use model::{Model, Object};

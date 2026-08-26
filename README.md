@@ -1,11 +1,8 @@
 # ferrocad
 
-**CAD as Rust code.**
+Ferrocad is a Rust library for creating parametric 2D sketches and 3D models directly in Rust and exporting them to formats commonly used for manufacturing and 3D printing.
 
-`ferrocad` is a Rust library for creating parametric 2D sketches and 3D models directly in Rust and exporting them to formats commonly used for manufacturing and 3D printing.
-
-The library treats models as ordinary Rust programs.
-Shapes, dimensions, transformations, and operations can be expressed using familiar Rust structs, functions, traits, modules, and types.
+The library treats models as ordinary Rust programs so you can write short, simple programs that produce high quality CAD models.
 
 ## Example
 

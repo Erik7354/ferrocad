@@ -47,6 +47,8 @@ Ferrocad is still very young so please expect breaking changes between versions.
 ## Contribution
 
 Thanks for your help improving the project!
+I am looking forward hearing your ideas how ferrocad can be improved.
+
 Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion in Tokio by you shall be licensed as MIT, without any additional terms or conditions.
 
 ## Commercial Use

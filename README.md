@@ -23,7 +23,7 @@ fn main() -> std::io::Result<()> {
 ## Why
 
 Traditional CAD tools are primarily designed around graphical interfaces.
-Script-based CAD tools improve reproducibility, but often require learning a domain-specific language and lack the ecosystem.
+Script-based CAD tools improve reproducibility, but often require learning a domain-specific language.
 A ferrocad project is just ordinary Rust. 
 This small difference enables some benefits:
 

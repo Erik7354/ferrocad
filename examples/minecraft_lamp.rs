@@ -415,11 +415,11 @@ impl Lamp {
         let cable =
             Cylinder::new(h + 2.mm(), self.cable_w() / 2).translate(od, Length::ZERO, Length::ZERO);
         Cylinder::new(h, od)
+            .bake(self.tol)
             .difference(Cylinder::new(h + 2.mm(), self.flange_r()))
             .difference(pocket)
             .difference(cable)
             .translate(Length::ZERO, Length::ZERO, z)
-            .bake(self.tol)
     }
 
     fn grille(&self) -> Body {

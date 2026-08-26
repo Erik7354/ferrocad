@@ -10,14 +10,11 @@ use super::boolean::Kernel;
 ///
 /// [`Solid::bake`] commits a chord tolerance by meshing the input and keeping
 /// the Manifold. Later [`mesh`](Self::mesh) calls ignore their tolerance
-/// argument and export that result. Use the typed
-/// [`Union`](super::Union) / [`Difference`](super::Difference) /
-/// [`Intersection`](super::Intersection) tree when you still need to remesh
-/// primitives at another quality.
+/// argument and export that result.
 ///
-/// Inherent `union`, `difference`, and `intersection` return [`Body`], so a
-/// loop accumulator keeps one type. The [`Solid`] trait methods still wrap
-/// into the typed tree.
+/// Boolean CSG (`union`, `difference`, `intersection`) and batch helpers
+/// (`union_all`, `difference_all`) return [`Body`], so a loop accumulator
+/// keeps one type.
 #[derive(Clone)]
 pub struct Body {
     kernel: Kernel,
@@ -194,28 +191,25 @@ mod tests {
     }
 
     #[test]
-    fn baked_plate_hole_loop_matches_typed_difference_chain() {
+    fn plate_hole_loop_matches_difference_all() {
         let plate = Cuboid::new(40.mm(), 30.mm(), 4.mm());
         let holes = [
             Cylinder::new(10.mm(), 2.mm()).translate(-10.mm(), -8.mm(), Length::ZERO),
             Cylinder::new(10.mm(), 2.mm()).translate(10.mm(), -8.mm(), Length::ZERO),
             Cylinder::new(10.mm(), 2.mm()).translate(-10.mm(), 8.mm(), Length::ZERO),
         ];
-        let typed = plate
-            .difference(holes[0])
-            .difference(holes[1])
-            .difference(holes[2])
-            .mesh(500.um());
 
         let mut body = plate.bake(500.um());
         for hole in holes {
             body = body.difference(hole);
         }
 
-        assert_volume_near(&body.mesh(500.um()), typed.signed_volume(), 1.0);
-
         let batched = Body::difference_all(plate, holes, 500.um());
-        assert_volume_near(&batched.mesh(500.um()), typed.signed_volume(), 1.0);
+        assert_volume_near(
+            &body.mesh(500.um()),
+            batched.mesh(500.um()).signed_volume(),
+            1.0,
+        );
     }
 
     #[test]
@@ -256,18 +250,18 @@ mod tests {
     }
 
     #[test]
-    fn bake_then_translate_matches_typed_pose() {
+    fn bake_then_translate_matches_posed_primitive_mesh() {
         let baked = Cuboid::cube(10.mm())
             .bake(1.mm())
             .translate(5.mm(), -2.mm(), 3.mm())
             .mesh(1.mm());
-        let typed = Cuboid::cube(10.mm())
+        let posed = Cuboid::cube(10.mm())
             .translate(5.mm(), -2.mm(), 3.mm())
             .mesh(1.mm());
 
-        assert_volume_near(&baked, typed.signed_volume(), 1e-3);
+        assert_volume_near(&baked, posed.signed_volume(), 1e-3);
         let (min_a, max_a) = bbox(&baked);
-        let (min_b, max_b) = bbox(&typed);
+        let (min_b, max_b) = bbox(&posed);
         for i in 0..3 {
             assert!((min_a[i] - min_b[i]).abs() < 1e-6);
             assert!((max_a[i] - max_b[i]).abs() < 1e-6);
@@ -275,14 +269,14 @@ mod tests {
     }
 
     #[test]
-    fn body_mesh_matches_typed_mesh_at_bake_tolerance() {
+    fn body_mesh_matches_primitive_mesh_at_bake_tolerance() {
         let cube = Cuboid::cube(10.mm());
         let baked = cube.bake(1.mm()).mesh(99.mm());
-        let typed = cube.mesh(1.mm());
+        let primitive = cube.mesh(1.mm());
 
-        assert_volume_near(&baked, typed.signed_volume(), 1e-3);
+        assert_volume_near(&baked, primitive.signed_volume(), 1e-3);
         let (min_a, max_a) = bbox(&baked);
-        let (min_b, max_b) = bbox(&typed);
+        let (min_b, max_b) = bbox(&primitive);
         for i in 0..3 {
             assert!((min_a[i] - min_b[i]).abs() < 1e-6);
             assert!((max_a[i] - max_b[i]).abs() < 1e-6);
@@ -300,5 +294,112 @@ mod tests {
         let combined = moved.union(Cuboid::cube(10.mm()));
         let _: Body = combined.clone();
         assert_volume_near(&combined.mesh(1.mm()), 2000.0, 1e-3);
+    }
+
+    #[test]
+    fn cube_minus_inner_cube_has_shell_volume() {
+        let mesh = Cuboid::cube(20.mm())
+            .bake(1.mm())
+            .difference(Cuboid::cube(10.mm()))
+            .mesh(1.mm());
+
+        assert_volume_near(&mesh, 7000.0, 1e-3);
+    }
+
+    #[test]
+    fn cube_intersection_inner_cube_keeps_the_smaller_volume() {
+        let mesh = Cuboid::cube(20.mm())
+            .bake(1.mm())
+            .intersection(Cuboid::cube(10.mm()))
+            .mesh(1.mm());
+
+        assert_volume_near(&mesh, 1000.0, 1e-3);
+    }
+
+    #[test]
+    fn cube_minus_itself_is_empty() {
+        let mesh = Cuboid::cube(10.mm())
+            .bake(1.mm())
+            .difference(Cuboid::cube(10.mm()))
+            .mesh(1.mm());
+
+        assert!(mesh.vertices.is_empty());
+        assert!(mesh.triangles.is_empty());
+    }
+
+    #[test]
+    fn small_cube_minus_large_cube_is_empty() {
+        let mesh = Cuboid::cube(10.mm())
+            .bake(1.mm())
+            .difference(Cuboid::cube(20.mm()))
+            .mesh(1.mm());
+
+        assert!(mesh.vertices.is_empty());
+        assert!(mesh.triangles.is_empty());
+    }
+
+    #[test]
+    fn plate_minus_through_hole_loses_the_cylinder_volume() {
+        let plate = Cuboid::new(40.mm(), 30.mm(), 4.mm());
+        let hole = Cylinder::new(10.mm(), 5.mm());
+        let mesh = plate.bake(500.um()).difference(hole).mesh(500.um());
+
+        let plate_volume = plate.mesh(500.um()).signed_volume();
+        let volume = mesh.signed_volume();
+        let hole_volume = std::f64::consts::PI * 25.0 * 4.0;
+
+        assert!(!mesh.vertices.is_empty());
+        assert!(!mesh.triangles.is_empty());
+        assert!(volume > 0.0);
+        assert!(volume < plate_volume);
+        assert!(volume > plate_volume - hole_volume - 1.0);
+        assert!(volume < plate_volume - hole_volume * 0.8);
+
+        let min_xy = mesh
+            .vertices
+            .iter()
+            .map(|vertex| (vertex.x * vertex.x + vertex.y * vertex.y).sqrt())
+            .fold(f64::MAX, f64::min);
+        assert!(
+            (min_xy - 5.0).abs() < 0.5,
+            "through-hole rim must stay near radius 5, got {min_xy}"
+        );
+    }
+
+    #[test]
+    fn disjoint_union_adds_volumes() {
+        let left = Cuboid::cube(10.mm());
+        let right = Cuboid::cube(10.mm()).translate(20.mm(), Length::ZERO, Length::ZERO);
+        let mesh = left.bake(1.mm()).union(right).mesh(1.mm());
+
+        assert_volume_near(&mesh, 2000.0, 1e-3);
+    }
+
+    #[test]
+    fn pose_then_difference_matches_difference_then_pose() {
+        let plate = Cuboid::new(40.mm(), 30.mm(), 4.mm());
+        let hole = Cylinder::new(10.mm(), 5.mm());
+        let offset = 8.mm();
+        let tol = 500.um();
+
+        let posed_then_cut = plate
+            .translate(offset, Length::ZERO, Length::ZERO)
+            .bake(tol)
+            .difference(hole.translate(offset, Length::ZERO, Length::ZERO))
+            .mesh(tol);
+        let cut_then_posed = plate
+            .bake(tol)
+            .difference(hole)
+            .translate(offset, Length::ZERO, Length::ZERO)
+            .mesh(tol);
+
+        assert_volume_near(&posed_then_cut, cut_then_posed.signed_volume(), 1.0);
+
+        let (min_a, max_a) = bbox(&posed_then_cut);
+        let (min_b, max_b) = bbox(&cut_then_posed);
+        for i in 0..3 {
+            assert!((min_a[i] - min_b[i]).abs() < 0.6);
+            assert!((max_a[i] - max_b[i]).abs() < 0.6);
+        }
     }
 }

@@ -42,18 +42,10 @@
 
 ## Boolean operations
 
-### Typed Tree
-
-[x] union(other) → Union
-[x] difference(other) → Difference
-[x] intersection(other) → Intersection
-
-### Baked body
-
 [x] Solid::bake(tolerance) → Body
-[x] Body::{ union | difference | intersection }
-[x] Body::union_all(solids, tolerance)
-[x] Body::difference_all(body, cuts, tolerance)
+[x] union / union_all
+[x] difference / difference_all 
+[x] intersection
 
 ## Mesh and export
 

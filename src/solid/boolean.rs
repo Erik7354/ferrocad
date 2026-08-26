@@ -7,22 +7,6 @@ use manifold_csg::manifold::Manifold;
 
 use crate::mesh::{Mesh, Point3};
 
-pub(crate) fn union(a: &Mesh, b: &Mesh) -> Mesh {
-    Kernel::from_mesh(a).union(&Kernel::from_mesh(b)).to_mesh()
-}
-
-pub(crate) fn difference(a: &Mesh, b: &Mesh) -> Mesh {
-    Kernel::from_mesh(a)
-        .difference(&Kernel::from_mesh(b))
-        .to_mesh()
-}
-
-pub(crate) fn intersection(a: &Mesh, b: &Mesh) -> Mesh {
-    Kernel::from_mesh(a)
-        .intersection(&Kernel::from_mesh(b))
-        .to_mesh()
-}
-
 /// Owned Manifold wrapper. The public [`super::Body`] type stores this.
 #[derive(Clone)]
 pub(crate) struct Kernel {

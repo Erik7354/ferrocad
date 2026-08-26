@@ -17,7 +17,7 @@ pub use mesh::{Mesh, Point2, Point3};
 pub use model::{Model, Object};
 pub use sketch::{Circle, Polygon, Rectangle, Sketch};
 pub use solid::{
-    Body, Cuboid, Cylinder, Extrusion, RotateExtrusion, Solid, Sphere,
+    Body, Cuboid, Cylinder, Extrusion, RotateExtrusion, Solid, Sphere, TwistExtrusion,
 };
 pub use transform::{Affine2, Affine3, Pose2, Pose3, TransformedSketch, TransformedSolid};
 

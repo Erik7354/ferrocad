@@ -1,7 +1,7 @@
 use crate::angle::Angle;
 use crate::length::Length;
 use crate::sketch::{Circle, Polygon, Rectangle, Sketch};
-use crate::solid::{Body, Cuboid, Cylinder, Extrusion, RotateExtrusion, Sphere};
+use crate::solid::{Body, Cuboid, Cylinder, Extrusion, RotateExtrusion, Sphere, TwistExtrusion};
 use crate::transform::affine::{Affine2, Affine3};
 use crate::transform::transformed::{TransformedSketch, TransformedSolid};
 
@@ -116,6 +116,12 @@ impl<S: Sketch> Pose3 for Extrusion<S> {
     }
 }
 impl<S: Sketch> Pose3 for RotateExtrusion<S> {
+    type Inner = Self;
+    fn posed(self) -> TransformedSolid<Self> {
+        TransformedSolid::new(self)
+    }
+}
+impl<S: Sketch> Pose3 for TwistExtrusion<S> {
     type Inner = Self;
     fn posed(self) -> TransformedSolid<Self> {
         TransformedSolid::new(self)

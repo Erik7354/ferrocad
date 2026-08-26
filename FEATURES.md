@@ -23,7 +23,7 @@
 [] Polyhedron
 [] import
 [x] Extrude(height)
-[] Extrude twist / slices
+[x] Extrude twist / slices
 [x] RotateExtrude(angle)
 [] surface
 

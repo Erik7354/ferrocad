@@ -8,6 +8,7 @@ pub mod cylinder;
 pub mod extrusion;
 pub mod rotate_extrusion;
 pub mod sphere;
+pub mod twist_extrusion;
 
 pub use body::Body;
 pub use cuboid::Cuboid;
@@ -15,6 +16,7 @@ pub use cylinder::Cylinder;
 pub use extrusion::Extrusion;
 pub use rotate_extrusion::RotateExtrusion;
 pub use sphere::Sphere;
+pub use twist_extrusion::TwistExtrusion;
 
 /// A Solid represents a 3-dimensional volume.
 pub trait Solid {

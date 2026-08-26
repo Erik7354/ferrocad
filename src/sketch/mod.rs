@@ -1,7 +1,7 @@
 use crate::angle::Angle;
 use crate::length::Length;
 use crate::mesh::Point2;
-use crate::solid::{Extrusion, RotateExtrusion};
+use crate::solid::{Extrusion, RotateExtrusion, TwistExtrusion};
 
 pub mod circle;
 pub mod polygon;
@@ -23,5 +23,9 @@ pub trait Sketch: Sized {
 
     fn rotate_extrude(self, angle: Angle) -> RotateExtrusion<Self> {
         RotateExtrusion::new(self, angle)
+    }
+
+    fn twist_extrude(self, height: Length, twist: Angle) -> TwistExtrusion<Self> {
+        TwistExtrusion::new(self, height, twist)
     }
 }

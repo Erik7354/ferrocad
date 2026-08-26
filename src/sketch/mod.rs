@@ -4,11 +4,13 @@ use crate::mesh::Point2;
 use crate::solid::{Extrusion, RotateExtrusion, TwistExtrusion};
 
 pub mod circle;
+mod hull;
 pub mod polygon;
 pub mod rectangle;
 pub(crate) mod triangulate;
 
 pub use circle::Circle;
+pub use hull::hull_sketches;
 pub use polygon::Polygon;
 pub use rectangle::Rectangle;
 
@@ -27,5 +29,23 @@ pub trait Sketch: Sized {
 
     fn twist_extrude(self, height: Length, twist: Angle) -> TwistExtrusion<Self> {
         TwistExtrusion::new(self, height, twist)
+    }
+
+    /// Convex hull of this sketch, tessellated at `tolerance`.
+    ///
+    /// The result is a polygon.
+    fn hull(self, tolerance: Length) -> Polygon {
+        hull_sketches([self], tolerance)
+    }
+
+    /// Convex hull of this sketch and `other`, tessellated at `tolerance`.
+    ///
+    /// The result is a polygon.
+    fn hull_with(self, other: impl Sketch, tolerance: Length) -> Polygon {
+        hull::hull_points(
+            self.contour(tolerance)
+                .into_iter()
+                .chain(other.contour(tolerance)),
+        )
     }
 }

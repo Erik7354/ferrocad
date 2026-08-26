@@ -145,6 +145,16 @@ impl TransformedSolid<Body> {
     pub fn intersection(self, other: impl Solid) -> Body {
         self.into_body().intersection(other)
     }
+
+    /// Convex hull of this posed body. Keep a [`Body`].
+    pub fn hull(self) -> Body {
+        self.into_body().hull()
+    }
+
+    /// Convex hull of this posed body and `other`. Keep a [`Body`].
+    pub fn hull_with(self, other: impl Solid) -> Body {
+        self.into_body().hull_with(other)
+    }
 }
 
 impl<S: Solid> Solid for TransformedSolid<S> {

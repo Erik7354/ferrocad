@@ -1,6 +1,6 @@
-//! Mesh boolean operations via Manifold.
+//! Mesh boolean and hull operations via Manifold.
 //!
-//! This module converts ferrocad meshes to Manifold, runs the boolean, and
+//! This module converts ferrocad meshes to Manifold, runs the operation, and
 //! converts the result back. Manifold types stay private to this module.
 
 use manifold_csg::manifold::Manifold;
@@ -66,6 +66,24 @@ impl Kernel {
         }
         let manifolds: Vec<Manifold> = parts.iter().map(|part| part.manifold.clone()).collect();
         check(Manifold::batch_difference(&manifolds))
+    }
+
+    pub(crate) fn hull(&self) -> Self {
+        if self.is_empty() {
+            return Self::empty();
+        }
+        check(self.manifold.hull())
+    }
+
+    pub(crate) fn batch_hull(parts: &[Self]) -> Self {
+        if parts.is_empty() {
+            return Self::empty();
+        }
+        if let [only] = parts {
+            return only.hull();
+        }
+        let manifolds: Vec<Manifold> = parts.iter().map(|part| part.manifold.clone()).collect();
+        check(Manifold::batch_hull(&manifolds))
     }
 
     pub(crate) fn transform(&self, m: &[f64; 12]) -> Self {

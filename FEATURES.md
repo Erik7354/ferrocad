@@ -37,7 +37,7 @@
 [x] mirror(x, y) / mirror(x, y, z)
 [x] multmatrix(Affine2) / multmatrix(Affine3)
 [] offset(r | delta, chamfer)
-[] hull
+[x] hull
 [] minkowski
 
 ## Boolean operations

@@ -15,7 +15,7 @@ pub use export::three_mf::{ThreeMfExport, ThreeMfMetadata, write_3mf};
 pub use length::{Length, ToLength};
 pub use mesh::{Mesh, Point2, Point3};
 pub use model::{Model, Object};
-pub use sketch::{Circle, Polygon, Rectangle, Sketch};
+pub use sketch::{Circle, Polygon, Rectangle, Sketch, hull_sketches};
 pub use solid::{
     Body, Cuboid, Cylinder, Extrusion, RotateExtrusion, Solid, Sphere, TwistExtrusion,
 };

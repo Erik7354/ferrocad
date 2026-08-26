@@ -12,9 +12,9 @@ use super::boolean::Kernel;
 /// the Manifold. Later [`mesh`](Self::mesh) calls ignore their tolerance
 /// argument and export that result.
 ///
-/// Boolean CSG (`union`, `difference`, `intersection`) and batch helpers
-/// (`union_all`, `difference_all`) return [`Body`], so a loop accumulator
-/// keeps one type.
+/// Boolean CSG (`union`, `difference`, `intersection`), convex hull
+/// (`hull`, `hull_with`, `hull_all`), and batch helpers (`union_all`,
+/// `difference_all`) return [`Body`], so a loop accumulator keeps one type.
 #[derive(Clone)]
 pub struct Body {
     kernel: Kernel,
@@ -127,6 +127,43 @@ impl Body {
             tolerance,
         }
     }
+
+    /// Convex hull of this solid. Keep the Manifold.
+    pub fn hull(self) -> Self {
+        Self {
+            kernel: self.kernel.hull(),
+            tolerance: self.tolerance,
+        }
+    }
+
+    /// Convex hull of this solid and `other`. Keep the Manifold.
+    pub fn hull_with(self, other: impl Solid) -> Self {
+        self.with_other(other, |a, b| Kernel::batch_hull(&[a.clone(), b.clone()]))
+    }
+
+    /// Convex hull of every solid in `solids`, tessellated at `tolerance`.
+    ///
+    /// An empty iterator yields [`Body::empty`].
+    pub fn hull_all<I>(solids: I, tolerance: Length) -> Self
+    where
+        I: IntoIterator,
+        I::Item: Solid,
+    {
+        let parts: Vec<Kernel> = solids
+            .into_iter()
+            .map(|solid| Kernel::from_mesh(&solid.mesh(tolerance)))
+            .collect();
+        if parts.is_empty() {
+            return Self {
+                kernel: Kernel::empty(),
+                tolerance,
+            };
+        }
+        Self {
+            kernel: Kernel::batch_hull(&parts),
+            tolerance,
+        }
+    }
 }
 
 impl Solid for Body {
@@ -146,8 +183,10 @@ mod tests {
     use super::*;
     use crate::ToLength;
     use crate::mesh::Mesh;
+    use crate::sketch::{Polygon, Sketch};
     use crate::solid::cuboid::Cuboid;
     use crate::solid::cylinder::Cylinder;
+    use crate::solid::sphere::Sphere;
     use crate::transform::Pose3;
 
     fn assert_volume_near(mesh: &Mesh, expected: f64, abs_tol: f64) {
@@ -401,5 +440,130 @@ mod tests {
             assert!((min_a[i] - min_b[i]).abs() < 0.6);
             assert!((max_a[i] - max_b[i]).abs() < 0.6);
         }
+    }
+
+    fn c_polygon() -> Polygon {
+        Polygon::new(vec![
+            [0.mm(), 0.mm()],
+            [10.mm(), 0.mm()],
+            [10.mm(), 2.mm()],
+            [2.mm(), 2.mm()],
+            [2.mm(), 8.mm()],
+            [10.mm(), 8.mm()],
+            [10.mm(), 10.mm()],
+            [0.mm(), 10.mm()],
+        ])
+    }
+
+    #[test]
+    fn hull_of_a_cube_matches_the_cube() {
+        let cube = Cuboid::cube(10.mm());
+        let hulled = cube.bake(1.mm()).hull().mesh(1.mm());
+
+        assert_volume_near(&hulled, 1000.0, 1e-3);
+        let (min, max) = bbox(&hulled);
+        for i in 0..3 {
+            assert!((min[i] + 5.0).abs() < 1e-6);
+            assert!((max[i] - 5.0).abs() < 1e-6);
+        }
+    }
+
+    #[test]
+    fn hull_of_a_c_prism_is_the_bounding_box() {
+        let mesh = c_polygon().extrude(8.mm()).bake(1.mm()).hull().mesh(1.mm());
+
+        assert_volume_near(&mesh, 800.0, 1e-3);
+    }
+
+    #[test]
+    fn hull_of_two_disjoint_cubes_is_the_spanning_box() {
+        let mesh = Cuboid::cube(10.mm())
+            .bake(1.mm())
+            .hull_with(Cuboid::cube(10.mm()).translate(20.mm(), Length::ZERO, Length::ZERO))
+            .mesh(1.mm());
+
+        assert_volume_near(&mesh, 3000.0, 1e-3);
+    }
+
+    #[test]
+    fn hull_of_two_spheres_is_between_union_and_bbox() {
+        let a = Sphere::new(10.mm());
+        let b = Sphere::new(10.mm()).translate(40.mm(), Length::ZERO, Length::ZERO);
+        let mesh = Body::hull_all([a.posed(), b], 500.um()).mesh(500.um());
+        let union = a.bake(500.um()).union(b).mesh(500.um()).signed_volume();
+
+        let volume = mesh.signed_volume();
+        assert!(volume > 0.0);
+        assert!(volume > union);
+        assert!(volume < 60.0 * 20.0 * 20.0);
+
+        let (min, max) = bbox(&mesh);
+        assert!((min[0] + 10.0).abs() < 0.6);
+        assert!((max[0] - 50.0).abs() < 0.6);
+        assert!((min[1] + 10.0).abs() < 0.6);
+        assert!((max[1] - 10.0).abs() < 0.6);
+        assert!((min[2] + 10.0).abs() < 0.6);
+        assert!((max[2] - 10.0).abs() < 0.6);
+    }
+
+    #[test]
+    fn hull_all_of_one_solid_matches_unary_hull() {
+        let prism = c_polygon().extrude(8.mm());
+        let unary = prism.clone().bake(1.mm()).hull().mesh(1.mm());
+        let batched = Body::hull_all([prism], 1.mm()).mesh(1.mm());
+
+        assert_volume_near(&batched, unary.signed_volume(), 1e-3);
+    }
+
+    #[test]
+    fn empty_hull_is_empty() {
+        let empty_all = Body::hull_all(Vec::<Cuboid>::new(), 1.mm()).mesh(1.mm());
+        assert!(empty_all.vertices.is_empty());
+        assert!(empty_all.triangles.is_empty());
+
+        let empty_unary = Body::empty().hull().mesh(1.mm());
+        assert!(empty_unary.vertices.is_empty());
+        assert!(empty_unary.triangles.is_empty());
+    }
+
+    #[test]
+    fn pose_then_hull_matches_hull_then_pose() {
+        let prism = c_polygon().extrude(8.mm());
+        let offset = 8.mm();
+        let tol = 1.mm();
+
+        let posed_then_hull = prism
+            .clone()
+            .translate(offset, Length::ZERO, Length::ZERO)
+            .bake(tol)
+            .hull()
+            .mesh(tol);
+        let hull_then_posed = prism
+            .bake(tol)
+            .hull()
+            .translate(offset, Length::ZERO, Length::ZERO)
+            .mesh(tol);
+
+        assert_volume_near(&posed_then_hull, hull_then_posed.signed_volume(), 1.0);
+
+        let (min_a, max_a) = bbox(&posed_then_hull);
+        let (min_b, max_b) = bbox(&hull_then_posed);
+        for i in 0..3 {
+            assert!((min_a[i] - min_b[i]).abs() < 0.6);
+            assert!((max_a[i] - max_b[i]).abs() < 0.6);
+        }
+    }
+
+    #[test]
+    fn posed_body_hull_returns_body() {
+        let moved = Pose3::translate(
+            Cuboid::cube(10.mm()).bake(1.mm()),
+            20.mm(),
+            Length::ZERO,
+            Length::ZERO,
+        );
+        let combined = moved.hull_with(Cuboid::cube(10.mm()));
+        let _: Body = combined.clone();
+        assert_volume_near(&combined.mesh(1.mm()), 3000.0, 1e-3);
     }
 }

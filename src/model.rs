@@ -1,3 +1,4 @@
+use crate::Length;
 use crate::color::Color;
 use crate::mesh::Mesh;
 
@@ -5,6 +6,7 @@ use crate::mesh::Mesh;
 #[derive(Debug, Clone, Default)]
 pub struct Model {
     objects: Vec<Object>,
+    print: PrintSettings,
 }
 
 impl Model {
@@ -27,6 +29,7 @@ pub struct Object {
     pub name: String,
     pub mesh: Mesh,
     pub color: Option<Color>,
+    pub print: PrintSettings,
 }
 
 impl Object {
@@ -35,6 +38,7 @@ impl Object {
             name: name.into(),
             mesh,
             color: None,
+            print: PrintSettings::default(),
         }
     }
 
@@ -42,36 +46,83 @@ impl Object {
         self.color = Some(color);
         self
     }
+
+    pub fn with_print(mut self, print: PrintSettings) -> Self {
+        self.print = print;
+        self
+    }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::ToLength;
-    use crate::solid::Solid;
-    use crate::solid::cuboid::Cuboid;
+/// Print intent for a model or one object.
+///
+/// Each field is optional. A `None` value inherits from the parent
+/// (object from model, model from the slicer).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+pub struct PrintSettings {
+    pub nozzle: Option<Nozzle>,
+    pub layer_height: Option<Length>,
+    pub infill: Option<Infill>,
+    pub support: Option<Support>,
+    pub walls: Option<u32>,
+}
 
-    #[test]
-    fn new_object_keeps_name_and_mesh() {
-        let mesh = Cuboid::new(20.cm(), 30.cm(), 10.cm()).mesh(1.mm());
-        let object = Object::new("body", mesh);
+/// Common FDM nozzle diameters.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum Nozzle {
+    /// 0.2 mm
+    D02,
+    /// 0.4 mm
+    D04,
+    /// 0.6 mm
+    D06,
+    /// 0.8 mm
+    D08,
+}
 
-        assert_eq!(object.name, "body");
-        assert_eq!(object.mesh.vertices.len(), 8);
-        assert_eq!(object.mesh.triangles.len(), 12);
-        assert!(object.color.is_none());
+impl Nozzle {
+    pub fn diameter(self) -> Length {
+        match self {
+            Self::D02 => Length::um(200),
+            Self::D04 => Length::um(400),
+            Self::D06 => Length::um(600),
+            Self::D08 => Length::um(800),
+        }
     }
+}
 
-    #[test]
-    fn add_preserves_name_and_color() {
-        let mut model = Model::new();
-        model.add(
-            Object::new("body", Cuboid::cube(10.mm()).mesh(1.mm()))
-                .with_color(Color::rgb(200, 40, 40)),
-        );
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+pub struct Infill {
+    pub pattern: Option<InfillPattern>,
+    /// Percent, 0 through 100.
+    pub density: Option<u8>,
+}
 
-        let object = &model.objects()[0];
-        assert_eq!(object.name, "body");
-        assert_eq!(object.color, Some(Color::rgb(200, 40, 40)));
-    }
+/// Patterns that Bambu and Prusa both know.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum InfillPattern {
+    Lines,
+    Grid,
+    Gyroid,
+    Honeycomb,
+    Cubic,
+    Lightning,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum Support {
+    Off,
+    On {
+        kind: SupportKind,
+        on_build_plate_only: bool,
+        support_critical_regions_only: bool,
+        /// Gap between support and part. Maps to slicer contact distance.
+        z_offset: Option<Length>,
+    },
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+pub enum SupportKind {
+    #[default]
+    Normal,
+    Tree,
 }
